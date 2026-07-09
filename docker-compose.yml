@@ -1,0 +1,4 @@
+# Local development docker-compose file
+version: '3.8'
+services:
+  # Services definitions will go here
