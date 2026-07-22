@@ -18,7 +18,7 @@ def load_coords(records_path="records.json"):
     return records, coords
 
 
-def run_dbscan(coords, eps=0.005, min_samples=8):
+def run_dbscan(coords, eps=0.004, min_samples=8):
     """
     eps is in degrees (~0.005 deg ~ 550m at this latitude). Tune eps/
     min_samples against your real data until you get 3-5 clusters
@@ -50,7 +50,7 @@ def summarize_clusters(records, coords, labels):
     return sorted(summary, key=lambda c: -c["case_count"])
 
 
-def get_hotspots(records_path="records.json", eps=0.005, min_samples=8):
+def get_hotspots(records_path="records.json", eps=0.004, min_samples=8):
     """This is what /analytics/hotspots would call."""
     records, coords = load_coords(records_path)
     labels = run_dbscan(coords, eps=eps, min_samples=min_samples)
