@@ -17,20 +17,25 @@ sys.path.append(os.path.join(BASE_DIR, "..", "hotspot"))
 sys.path.append(os.path.join(BASE_DIR, "..", "forecasting"))
 sys.path.append(os.path.join(BASE_DIR, "..", "risk_flagging"))
 sys.path.append(os.path.join(BASE_DIR, "..", "rag"))
+sys.path.append(os.path.join(BASE_DIR, "..", "text_to_sql"))
+
 
 from rag_pipeline import ingest_records, answer_query
 from hotspot_detection import get_hotspots
 from trend_forecasting import get_trends
 from risk_flagging import get_risk_flags
+from text_to_sql import setup_table, load_data, answer_query as sql_answer_query
 
 HOTSPOT_DATA = os.path.join(BASE_DIR, "..", "hotspot", "records.json")
 FORECAST_DATA = os.path.join(BASE_DIR, "..", "forecasting", "records.json")
 RISK_DATA = os.path.join(BASE_DIR, "..", "risk_flagging", "records.json")
 RAG_DATA = os.path.join(BASE_DIR, "..", "rag", "records.json")
+SQL_DATA = os.path.join(BASE_DIR, "..", "text_to_sql", "records.json")
 
 app = FastAPI(title="Crime Analyser — ML Models API")
 ingest_records(records_path=RAG_DATA)
-
+setup_table()
+load_data(records_path=SQL_DATA)
 
 @app.get("/analytics/hotspots")
 def hotspots():
@@ -69,5 +74,16 @@ class ChatQuery(BaseModel):
 def chat_query(payload: ChatQuery):
     try:
         return answer_query(payload.query)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class SQLQuery(BaseModel):
+    query: str
+
+@app.post("/query/sql")
+def sql_query(payload: SQLQuery):
+    try:
+        return sql_answer_query(payload.query)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
