@@ -18,6 +18,7 @@ sys.path.append(os.path.join(BASE_DIR, "..", "forecasting"))
 sys.path.append(os.path.join(BASE_DIR, "..", "risk_flagging"))
 sys.path.append(os.path.join(BASE_DIR, "..", "rag"))
 sys.path.append(os.path.join(BASE_DIR, "..", "text_to_sql"))
+sys.path.append(os.path.join(BASE_DIR, "..", "text_to_cypher"))
 
 
 from rag_pipeline import ingest_records, answer_query
@@ -25,6 +26,7 @@ from hotspot_detection import get_hotspots
 from trend_forecasting import get_trends
 from risk_flagging import get_risk_flags
 from text_to_sql import setup_table, load_data, answer_query as sql_answer_query
+from text_to_cypher import answer_query as cypher_answer_query 
 
 HOTSPOT_DATA = os.path.join(BASE_DIR, "..", "hotspot", "records.json")
 FORECAST_DATA = os.path.join(BASE_DIR, "..", "forecasting", "records.json")
@@ -87,3 +89,13 @@ def sql_query(payload: SQLQuery):
         return sql_answer_query(payload.query)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+class CypherQuery(BaseModel):
+    query: str
+
+@app.post("/query/cypher")
+def cypher_query(payload: CypherQuery):
+    try:
+        return cypher_answer_query(payload.query)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))    
