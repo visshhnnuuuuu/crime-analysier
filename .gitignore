@@ -36,3 +36,11 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+venv/
+.env
+__pycache__/
+*.pyc
+venv/
+.env
+__pycache__/
+*.pyc
