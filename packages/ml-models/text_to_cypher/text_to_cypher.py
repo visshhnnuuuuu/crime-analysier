@@ -1,13 +1,14 @@
 """
 Text-to-Cypher (Phase 6)
 
-Mirrors FIR data into Neo4j as a graph (Case, Accused nodes + relationships),
-injects graph schema into a prompt, generates Cypher, validates it's
-read-only, executes it, returns results.
+Injects graph schema into a prompt, generates Cypher, validates it's
+read-only, executes it, returns results. Graph loading is delegated to
+postgres_to_neo4j.py, the single source of truth for what's in Neo4j —
+this module no longer does its own independent load from records.json,
+so two scripts can't silently overwrite each other's graph data.
 """
 
 import os
-import json
 import re
 from neo4j import GraphDatabase
 from openai import OpenAI
@@ -17,9 +18,9 @@ client = OpenAI(
     api_key=os.environ.get("OPENROUTER_API_KEY"),
 )
 
-NEO4J_URI = "bolt://localhost:7687"
-NEO4J_USER = "neo4j"
-NEO4J_PASSWORD = "crimepass123"
+NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "crimepass123")
 
 GRAPH_SCHEMA = """
 Nodes:
@@ -33,29 +34,14 @@ Relationships:
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 
-def load_graph(records_path="records.json"):
-    with open(records_path) as f:
-        records = json.load(f)
-
-    with driver.session() as session:
-        session.run("MATCH (n) DETACH DELETE n")  # clean slate
-        for r in records:
-            session.run("""
-                MERGE (c:Case {fir_number: $fir_number})
-                SET c.police_station = $police_station,
-                    c.date_filed = $date_filed,
-                    c.crime_type = $crime_type,
-                    c.status = $status,
-                    c.latitude = $latitude,
-                    c.longitude = $longitude
-                MERGE (a:Accused {name: $accused_name})
-                MERGE (a)-[:ACCUSED_IN]->(c)
-            """, fir_number=r["fir_number"], police_station=r["police_station"],
-                 date_filed=r["date_filed"], crime_type=r["crime_type"],
-                 status=r["status"], latitude=r["latitude"], longitude=r["longitude"],
-                 accused_name=r["accused_name"])
-
-    print(f"Loaded {len(records)} records into Neo4j graph")
+def load_graph():
+    """
+    Delegates to postgres_to_neo4j.run() so there's one authoritative
+    load path (Postgres, not records.json directly). Kept as a thin
+    wrapper so existing callers of load_graph() don't break.
+    """
+    from postgres_to_neo4j import run as sync_from_postgres
+    return sync_from_postgres()
 
 
 def generate_cypher(question):
@@ -115,7 +101,7 @@ def answer_query(question):
 
 
 if __name__ == "__main__":
-    load_graph("records.json")
+    load_graph()
     result = answer_query("Which accused are linked to more than 2 cases?")
     print("Cypher:", result.get("cypher"))
     print("Results:", result.get("results")[:10] if result.get("results") else result)

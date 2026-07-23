@@ -16,11 +16,11 @@ client = OpenAI(
 )
 
 DB_CONFIG = {
-    "host": "localhost",
-    "port": "5432",
-    "dbname": "postgres",
-    "user": "postgres",
-    "password": "crimepass123",
+    "host": os.environ.get("PG_HOST", "localhost"),
+    "port": os.environ.get("PG_PORT", "5432"),
+    "dbname": os.environ.get("PG_DBNAME", "postgres"),
+    "user": os.environ.get("PG_USER", "postgres"),
+    "password": os.environ.get("PG_PASSWORD", "crimepass123"),
 }
 
 SCHEMA = """
@@ -188,7 +188,8 @@ def call_llm(prompt):
         model="openai/gpt-oss-20b:free",
         messages=[{"role": "user", "content": prompt}],
     )
-    return response.choices[0].message.content.strip()
+    raw = response.choices[0].message.content.strip()
+    return raw.split("<|")[0]  # strip any leaked reasoning tokens
 
 
 def synthesize_answer(question, results):

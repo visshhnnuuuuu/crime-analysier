@@ -11,12 +11,23 @@ CRIME_TYPES = ["Theft", "Burglary", "Assault", "Fraud", "Robbery"]
 STATIONS = ["MG Road PS", "Whitefield PS", "Koramangala PS"]
 
 # Three tiers of accused persons:
-#   - HEAVY repeat offenders: appear in many cases (existing behavior)
-#   - MODERATE repeat offenders: appear in a handful of cases (NEW — fills
-#     the gap so the risk model has real middle ground to learn from)
+#   - HEAVY repeat offenders: appear in many cases
+#   - MODERATE repeat offenders: appear in a handful of cases
 #   - everyone else: one-off / first-time cases
-HEAVY_REPEAT_OFFENDERS = [fake.name() for _ in range(8)]
-MODERATE_REPEAT_OFFENDERS = [fake.name() for _ in range(25)]
+# gen_unique_names ensures no overlap between tiers or with one-off names,
+# so repeat-offender case histories never get silently merged with an
+# unrelated one-off case that happens to generate the same name.
+def gen_unique_names(n, exclude=set()):
+    names = set()
+    while len(names) < n:
+        name = fake.name()
+        if name not in exclude and name not in names:
+            names.add(name)
+    return list(names)
+
+HEAVY_REPEAT_OFFENDERS = gen_unique_names(8)
+MODERATE_REPEAT_OFFENDERS = gen_unique_names(25, exclude=set(HEAVY_REPEAT_OFFENDERS))
+REPEAT_OFFENDER_NAMES = set(HEAVY_REPEAT_OFFENDERS) | set(MODERATE_REPEAT_OFFENDERS)
 
 def gen_location():
     hotspots = [(12.9716, 77.5946), (12.9352, 77.6146), (12.9698, 77.7500)]
@@ -32,16 +43,20 @@ def pick_accused():
         # 20% chance: moderate repeat offender (fills the 2-10 case gap)
         return random.choice(MODERATE_REPEAT_OFFENDERS)
     else:
-        # 55% chance: first-time / one-off case
-        return fake.name()
+        # 55% chance: first-time / one-off case -- regenerate on collision
+        # with a repeat-offender name so histories never get merged
+        name = fake.name()
+        while name in REPEAT_OFFENDER_NAMES:
+            name = fake.name()
+        return name
 
 def gen_fir(i, day_index):
     lat, lon = gen_location()
     crime = random.choice(CRIME_TYPES)
-    d = date(2025, 1, 1) + timedelta(days=day_index)
+    d = date(2026, 1, 1) + timedelta(days=day_index)  # fixed: was 2025, mismatched fir_number's hardcoded "2026"
     accused = pick_accused()
     return {
-        "fir_number": f"{i}/2026",
+        "fir_number": f"{i}/{d.year}",  # fixed: derives year from actual filing date instead of hardcoding
         "police_station": random.choice(STATIONS),
         "date_filed": str(d),
         "crime_type": crime,

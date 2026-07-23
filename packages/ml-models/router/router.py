@@ -34,7 +34,9 @@ Format:
         model="openai/gpt-oss-20b:free",
         messages=[{"role": "user", "content": prompt}],
     )
-    text = response.choices[0].message.content.strip().lower()
+    raw = response.choices[0].message.content.strip()
+    raw = raw.split("<|")[0]  # strip any leaked reasoning tokens
+    text = raw.strip().lower()
     lines = [l.strip() for l in text.splitlines() if l.strip()]
 
     intent = "lookup"

@@ -103,7 +103,8 @@ def call_llm(prompt):
         model="openai/gpt-oss-20b:free",
         messages=[{"role": "user", "content": prompt}],
     )
-    return response.choices[0].message.content
+    raw = response.choices[0].message.content
+    return raw.split("<|")[0]  # strip any leaked reasoning tokens
 
 def answer_query(query):
     chunks = retrieve(query)
@@ -127,3 +128,4 @@ if __name__ == "__main__":
     result = answer_query("What thefts happened near a market street?")
     print(result["answer"])
     print("\nSources:", result["sources"])
+    

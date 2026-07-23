@@ -1,18 +1,37 @@
 """
 Kannada Language Support (Phase 7)
-
-Translates Kannada queries to English before routing them into the
-existing SQL / Cypher / RAG pipelines. Translation only — no changes
-to the underlying pipelines themselves.
 """
 
 import os
+import re
 from openai import OpenAI
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=os.environ.get("OPENROUTER_API_KEY"),
 )
+
+
+def _clean_translation(text):
+    text = text.strip()
+    text = re.sub(r"^(english |kannada )?translation:\s*", "", text, flags=re.IGNORECASE)
+    text = text.strip("\"'“”‘’")
+    return text.strip()
+
+
+def _call_translation_model(prompt, fallback_text):
+    try:
+        response = client.chat.completions.create(
+            model="openai/gpt-oss-20b:free",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = response.choices[0].message.content
+        if not raw or not raw.strip():
+            return fallback_text, "empty_response"
+        raw = raw.split("<|")[0]
+        return _clean_translation(raw), None
+    except Exception as e:
+        return fallback_text, str(e)
 
 
 def translate_to_english(text):
@@ -22,11 +41,7 @@ Output ONLY the translation, no explanation, no notes.
 Kannada text: "{text}"
 
 English translation:"""
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-20b:free",
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return response.choices[0].message.content.strip()
+    return _call_translation_model(prompt, fallback_text=text)
 
 
 def translate_to_kannada(text):
@@ -36,19 +51,10 @@ Output ONLY the translation, no explanation, no notes.
 English text: "{text}"
 
 Kannada translation:"""
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-20b:free",
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return response.choices[0].message.content.strip()
+    return _call_translation_model(prompt, fallback_text=text)
 
 
 def synthesize_answer(result):
-    """
-    Builds a short natural-language answer from raw query results
-    when the backend (text_to_sql / text_to_cypher) doesn't already
-    provide a synthesized 'answer' field.
-    """
     if "error" in result:
         return f"The query could not be completed: {result['error']}"
 
@@ -69,11 +75,7 @@ def synthesize_answer(result):
 
 
 def translate_and_route(text, backend="sql"):
-    """
-    Translates Kannada text to English, then routes it to the
-    requested backend's answer_query function.
-    """
-    english_query = translate_to_english(text)
+    english_query, translate_in_error = translate_to_english(text)
 
     if backend == "sql":
         from text_to_sql import answer_query as sql_answer_query
@@ -89,11 +91,15 @@ def translate_and_route(text, backend="sql"):
 
     result["translated_query"] = english_query
     result["original_query"] = text
+    if translate_in_error:
+        result["translate_in_warning"] = f"Kannada->English translation failed, used original text as-is: {translate_in_error}"
 
-    # Synthesize an answer if the backend didn't already provide one
     if "answer" not in result:
         result["answer"] = synthesize_answer(result)
 
-    result["answer_kannada"] = translate_to_kannada(result["answer"])
+    answer_kannada, translate_out_error = translate_to_kannada(result["answer"])
+    result["answer_kannada"] = answer_kannada
+    if translate_out_error:
+        result["translate_out_warning"] = f"English->Kannada translation failed, showing English only: {translate_out_error}"
 
     return result

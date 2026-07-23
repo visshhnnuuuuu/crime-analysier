@@ -13,3 +13,11 @@
 {"timestamp": "2026-07-23T07:35:14.603380+00:00", "event_type": "query", "details": {"endpoint": "/analytics/risk-flags", "role": "viewer"}}
 {"timestamp": "2026-07-23T07:35:20.040628+00:00", "event_type": "query", "details": {"endpoint": "/analytics/hotspots"}}
 {"timestamp": "2026-07-23T07:43:07.418167+00:00", "event_type": "risk_flag_review", "details": {"accused_name": "test", "reviewer": "test", "decision": "confirmed"}}
+{"timestamp": "2026-07-23T09:19:07.188848+00:00", "event_type": "query", "details": {"endpoint": "/chat/query", "query": "What thefts happened near a market street?"}}
+{"timestamp": "2026-07-23T09:19:36.966469+00:00", "event_type": "query", "details": {"endpoint": "/query/sql", "query": "How many theft cases were filed at MG Road PS?"}}
+{"timestamp": "2026-07-23T09:19:46.799115+00:00", "event_type": "query", "details": {"endpoint": "/query/cypher", "query": "Which accused are linked to more than 2 cases?"}}
+{"timestamp": "2026-07-23T09:19:59.060344+00:00", "event_type": "query", "details": {"endpoint": "/query/kannada", "query": "\u0c8e\u0c82\u0c9c\u0cbf \u0cb0\u0ccb\u0ca1\u0ccd \u0ca0\u0cbe\u0ca3\u0cc6\u0caf\u0cb2\u0ccd\u0cb2\u0cbf \u0c8e\u0cb7\u0ccd\u0c9f\u0cc1 \u0c95\u0cb3\u0ccd\u0cb3\u0ca4\u0ca8 \u0caa\u0ccd\u0cb0\u0c95\u0cb0\u0ca3\u0c97\u0cb3\u0cc1 \u0ca6\u0cbe\u0c96\u0cb2\u0cbe\u0c97\u0cbf\u0cb5\u0cc6?", "backend": "sql"}}
+{"timestamp": "2026-07-23T09:20:44.740099+00:00", "event_type": "query", "details": {"endpoint": "/query/auto", "query": "What patterns exist in market street thefts?"}}
+{"timestamp": "2026-07-23T09:20:46.331361+00:00", "event_type": "query", "details": {"endpoint": "/analytics/risk-flags", "role": "viewer"}}
+{"timestamp": "2026-07-23T09:20:46.445401+00:00", "event_type": "query", "details": {"endpoint": "/analytics/hotspots"}}
+{"timestamp": "2026-07-23T09:20:46.453988+00:00", "event_type": "query", "details": {"endpoint": "/analytics/trends"}}

@@ -82,6 +82,7 @@ def train_model(feature_df):
         scale_pos_weight=scale_pos_weight,
         tree_method="hist",
         eval_metric="logloss",
+        random_state=42,  # fixed: reproducible flags across repeated calls -- important for a human-review workflow
     )
     model.fit(X, y)
     return model, X
