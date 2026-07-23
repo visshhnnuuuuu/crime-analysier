@@ -12,3 +12,4 @@
 {"timestamp": "2026-07-23T07:34:46.111888+00:00", "event_type": "query", "details": {"endpoint": "/analytics/risk-flags", "role": "reviewer"}}
 {"timestamp": "2026-07-23T07:35:14.603380+00:00", "event_type": "query", "details": {"endpoint": "/analytics/risk-flags", "role": "viewer"}}
 {"timestamp": "2026-07-23T07:35:20.040628+00:00", "event_type": "query", "details": {"endpoint": "/analytics/hotspots"}}
+{"timestamp": "2026-07-23T07:43:07.418167+00:00", "event_type": "risk_flag_review", "details": {"accused_name": "test", "reviewer": "test", "decision": "confirmed"}}
