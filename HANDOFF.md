@@ -2,8 +2,8 @@
 
 Last updated: 2026-07-23. Everything below marked ✅ has been personally
 run and verified against live services (Postgres, Neo4j, a free LLM via
-OpenRouter) — not just written and assumed correct. Items marked 🟡 are
-built but not fully tested. Items marked ❌ are not started.
+OpenRouter) — not just written and assumed correct. Items marked ❌ are
+not started.
 
 ## Quick start
 
@@ -46,6 +46,8 @@ uvicorn main:app --reload --port 8000
 | Risk flagging | `ml-models/risk_flagging/risk_flagging.py` | XGBoost + SHAP, outputs flag + plain-language reasons, never a raw score |
 | RBAC | `ml-models/auth/rbac.py` | `viewer` can read; `reviewer`-only can action a review. Verified via role-header tests. |
 | Audit logging | `ml-models/audit/audit_log.py` | Every query + review action logged to `audit.log` with timestamp, role, details |
+| Intent router | `ml-models/router/router.py` | Classifies query as lookup/relationship/analytical, routes to sql/cypher/rag with confidence threshold. Verified: all 3 test cases routed correctly (95%, 95%, 90% confidence). |
+| NER | `ml-models/ner/ner_extraction.py` | LLM-based entity extraction (10 types: PERSON, LOCATION, DATE, CRIME_TYPE, POLICE_STATION, FIR_NUMBER, ORGANIZATION, WEAPON, VEHICLE, MONEY_AMOUNT). Verified on 3 sample records — correct extraction, schema validated. |
 | ETL: Postgres → Neo4j | `etl/postgres_to_neo4j.py` | Rebuilds graph from Postgres as source of truth. Verified: 883/883 synced. |
 | ETL: Document embedder | `etl/embed_documents.py` | Chunks + embeds case notes → `embeddings.json`. Verified: 883/883 embedded. |
 | API | `ml-models/api/main.py` | 6 live endpoints (below) |
@@ -78,22 +80,32 @@ uvicorn main:app --reload --port 8000
    script — there's no Celery, cron, or `/etl/run` trigger wired up
    despite what an earlier README draft implied. If a scheduled sync is
    needed, that has to be built.
-5. **Text-to-SQL / Text-to-Cypher use a free LLM (`openai/gpt-oss-20b:free`
-   via OpenRouter)** which occasionally leaks internal reasoning tokens
-   into raw output. There's a regex-based cleanup layer in both generators
-   to strip this, tested and currently working, but it's a known fragility
-   point if the model's output format shifts.
+5. **Text-to-SQL / Text-to-Cypher / router / NER all use a free LLM
+   (`openai/gpt-oss-20b:free` via OpenRouter)** which occasionally leaks
+   internal reasoning tokens into raw output. There's a regex-based
+   cleanup layer in each of these modules to strip this, tested and
+   currently working, but it's a known fragility point if the model's
+   output format shifts.
 6. **Single flat schema, not the full relational model.** Current
    `fir_records` table has one row per case with a single `accused_name`
    string. The plan's fuller schema (separate Victim, Complainant, Unit,
    Court entities, multi-accused cases) is not implemented.
+7. **Router not wired into the API.** `router.py` is verified working
+   standalone but `main.py` doesn't call it — devs still hit `/chat/query`,
+   `/query/sql`, or trigger Cypher manually rather than through one smart
+   endpoint. Wiring `route_query()` into a unified `/ask` endpoint that
+   auto-dispatches would be a natural next step.
+8. **NER is LLM-prompted, not a trained model.** `ner_extraction.py` uses
+   the same free LLM to extract entities via prompting rather than a
+   fine-tuned NER model (e.g. spaCy, a BERT-based tagger). This works well
+   on the tested samples but hasn't been validated at scale or against
+   edge cases (multiple people in one note, ambiguous dates, etc.) — a
+   production system may want a dedicated NER model for speed/consistency
+   at higher volume.
+9. **NER not wired into the API** — no `/extract/entities` endpoint exists yet.
 
 ## Not started (❌)
 
-- **NER** (10 entity types) — no extraction pipeline exists
-- **Intent router** — `ml-models/router/router.py` exists in the repo but
-  has not been tested or verified by this handoff; check it before relying
-  on it
 - **Kannada / multilingual layer** — no ASR, translation, or TTS pipeline;
   `embed_documents.py` is English-only (`all-MiniLM-L6-v2`)
 - **Real `CaseMaster` schema depth** — see known issue #6 above
@@ -106,7 +118,7 @@ OpenRouter's free-tier rate limits (worth checking their site for current
 limits) and to free-model availability changing over time. If this model
 stops being free, check `https://openrouter.ai/api/v1/models` for current
 `:free` options and swap the model string in `rag_pipeline.py`,
-`text_to_sql.py`, and `text_to_cypher.py`.
+`text_to_sql.py`, `text_to_cypher.py`, `router.py`, and `ner_extraction.py`.
 
 ## Data consistency — important
 
