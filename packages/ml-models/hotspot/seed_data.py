@@ -1,16 +1,22 @@
 from faker import Faker
 import random
+random.seed(42)
 import json
 from datetime import timedelta, date
 
 fake = Faker('en_IN')
+fake.seed_instance(42)
 
 CRIME_TYPES = ["Theft", "Burglary", "Assault", "Fraud", "Robbery"]
 STATIONS = ["MG Road PS", "Whitefield PS", "Koramangala PS"]
 
-# Pool of names — some will appear across MANY cases (repeat offenders),
-# most will appear once (first-time / one-off cases)
-REPEAT_OFFENDERS = [fake.name() for _ in range(8)]
+# Three tiers of accused persons:
+#   - HEAVY repeat offenders: appear in many cases (existing behavior)
+#   - MODERATE repeat offenders: appear in a handful of cases (NEW — fills
+#     the gap so the risk model has real middle ground to learn from)
+#   - everyone else: one-off / first-time cases
+HEAVY_REPEAT_OFFENDERS = [fake.name() for _ in range(8)]
+MODERATE_REPEAT_OFFENDERS = [fake.name() for _ in range(25)]
 
 def gen_location():
     hotspots = [(12.9716, 77.5946), (12.9352, 77.6146), (12.9698, 77.7500)]
@@ -18,10 +24,16 @@ def gen_location():
     return base_lat + random.uniform(-0.02, 0.02), base_lon + random.uniform(-0.02, 0.02)
 
 def pick_accused():
-    # 30% chance this case involves a known repeat offender, otherwise a new name
-    if random.random() < 0.30:
-        return random.choice(REPEAT_OFFENDERS)
-    return fake.name()
+    r = random.random()
+    if r < 0.25:
+        # 25% chance: heavy repeat offender
+        return random.choice(HEAVY_REPEAT_OFFENDERS)
+    elif r < 0.45:
+        # 20% chance: moderate repeat offender (fills the 2-10 case gap)
+        return random.choice(MODERATE_REPEAT_OFFENDERS)
+    else:
+        # 55% chance: first-time / one-off case
+        return fake.name()
 
 def gen_fir(i, day_index):
     lat, lon = gen_location()
@@ -57,4 +69,4 @@ with open("records.json", "w") as f:
     json.dump(records, f, indent=2)
 
 print(f"Generated {len(records)} records into records.json")
-print(f"Seeded {len(REPEAT_OFFENDERS)} repeat offenders across the dataset")
+print(f"Seeded {len(HEAVY_REPEAT_OFFENDERS)} heavy repeat offenders and {len(MODERATE_REPEAT_OFFENDERS)} moderate repeat offenders")

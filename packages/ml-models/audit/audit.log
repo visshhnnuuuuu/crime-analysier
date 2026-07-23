@@ -1,0 +1,14 @@
+{"timestamp": "2026-07-23T06:16:30.352477+00:00", "event_type": "query", "details": {"endpoint": "/query/sql", "query": "test question"}}
+{"timestamp": "2026-07-23T06:37:56.662391+00:00", "event_type": "query", "details": {"endpoint": "/query/sql", "query": "How many theft cases were filed at MG Road PS?"}}
+{"timestamp": "2026-07-23T06:38:12.849005+00:00", "event_type": "risk_flag_review", "details": {"accused_name": "Aditya Pal", "reviewer": "Officer Rao", "decision": "confirmed"}}
+{"timestamp": "2026-07-23T06:41:42.978120+00:00", "event_type": "query", "details": {"endpoint": "/analytics/risk-flags", "role": "viewer"}}
+{"timestamp": "2026-07-23T06:41:43.097422+00:00", "event_type": "risk_flag_review", "details": {"accused_name": "Aditya Pal", "reviewer": "Officer Rao", "decision": "confirmed"}}
+{"timestamp": "2026-07-23T06:47:15.504879+00:00", "event_type": "query", "details": {"endpoint": "/analytics/hotspots"}}
+{"timestamp": "2026-07-23T07:01:31.701162+00:00", "event_type": "etl_run", "details": {"triggered_by_role": "reviewer"}}
+{"timestamp": "2026-07-23T07:33:41.357691+00:00", "event_type": "query", "details": {"endpoint": "/analytics/hotspots"}}
+{"timestamp": "2026-07-23T07:33:41.375807+00:00", "event_type": "query", "details": {"endpoint": "/analytics/trends"}}
+{"timestamp": "2026-07-23T07:33:56.373205+00:00", "event_type": "query", "details": {"endpoint": "/analytics/hotspots"}}
+{"timestamp": "2026-07-23T07:34:03.505408+00:00", "event_type": "query", "details": {"endpoint": "/analytics/trends"}}
+{"timestamp": "2026-07-23T07:34:46.111888+00:00", "event_type": "query", "details": {"endpoint": "/analytics/risk-flags", "role": "reviewer"}}
+{"timestamp": "2026-07-23T07:35:14.603380+00:00", "event_type": "query", "details": {"endpoint": "/analytics/risk-flags", "role": "viewer"}}
+{"timestamp": "2026-07-23T07:35:20.040628+00:00", "event_type": "query", "details": {"endpoint": "/analytics/hotspots"}}

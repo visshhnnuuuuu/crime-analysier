@@ -48,12 +48,19 @@ def build_features(records):
 
 def label_risk(feature_df):
     """
-    Ground-truth label for TRAINING ONLY: repeat offender = risk case.
+    Ground-truth label for TRAINING ONLY: a composite risk proxy
+    combining case volume, crime-type diversity, and offense frequency
+    -- not just raw case count -- so the model has multiple genuine
+    signals to learn from and SHAP reflects real per-person variation.
     In a real system this would come from actual outcome data, not a
-    proxy rule — this is here purely so the demo model has something
-    to learn from on synthetic data.
+    proxy rule.
     """
-    feature_df["is_risk"] = (feature_df["prior_case_count"] >= 3).astype(int)
+    volume_score = (feature_df["prior_case_count"] >= 4).astype(int)
+    diversity_score = (feature_df["n_distinct_crime_types"] >= 3).astype(int)
+    frequency_score = (feature_df["avg_days_between_offenses"] <= 45).astype(int)
+
+    composite = volume_score + diversity_score + frequency_score
+    feature_df["is_risk"] = (composite >= 2).astype(int)
     return feature_df
 
 
@@ -63,7 +70,7 @@ def train_model(feature_df):
 
     n_pos = y.sum()
     n_neg = len(y) - n_pos
-    scale_pos_weight = n_neg / n_pos  # correct for class imbalance
+    scale_pos_weight = n_neg / n_pos if n_pos > 0 else 1.0
 
     model = xgb.XGBClassifier(
         n_estimators=50,

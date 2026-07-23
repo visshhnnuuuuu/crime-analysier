@@ -66,16 +66,30 @@ Write a SINGLE read-only Cypher query to answer:
 "{question}"
 
 Rules:
-- Only MATCH/RETURN, never CREATE/DELETE/SET/MERGE
-- Output ONLY the raw Cypher query, no explanation, no markdown fences
+- Only MATCH/RETURN/WITH/WHERE, never CREATE/DELETE/SET/MERGE
+- Output ONLY the raw Cypher query wrapped in a code block, nothing else, no reasoning, no explanation.
 
-Cypher:"""
+````cypher
+<your query here>
+```"""
     response = client.chat.completions.create(
         model="openai/gpt-oss-20b:free",
         messages=[{"role": "user", "content": prompt}],
     )
-    cypher = response.choices[0].message.content.strip()
-    cypher = re.sub(r"^```(cypher)?|```$", "", cypher, flags=re.MULTILINE).strip()
+    raw = response.choices[0].message.content.strip()
+
+    # Cut off any leaked reasoning/special tokens from the model
+    raw = raw.split("<|")[0]
+
+    # Prefer content inside a ```cypher ... ``` fence if present
+    fence_match = re.search(r"```(?:cypher)?\s*(.*?)```", raw, re.DOTALL)
+    if fence_match:
+        cypher = fence_match.group(1).strip()
+    else:
+        # Fallback: slice from the first real Cypher keyword onward
+        keyword_match = re.search(r"\b(MATCH|OPTIONAL MATCH|WITH|CALL|UNWIND)\b", raw, re.IGNORECASE)
+        cypher = raw[keyword_match.start():].strip() if keyword_match else raw
+
     return cypher
 
 
@@ -105,3 +119,5 @@ if __name__ == "__main__":
     result = answer_query("Which accused are linked to more than 2 cases?")
     print("Cypher:", result.get("cypher"))
     print("Results:", result.get("results")[:10] if result.get("results") else result)
+
+
